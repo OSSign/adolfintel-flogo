@@ -5,7 +5,7 @@ on:
     inputs:
       source_branch:
         description: 'The source branch or ref to build from'
-        default: 'main'
+        default: 'master'
         required: true
 
       release_name:
