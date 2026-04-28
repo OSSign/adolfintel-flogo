@@ -63,6 +63,7 @@ jobs:
         shell: bash
         env:
           OSSIGN_CONFIG: ${{ secrets.OSSIGN_CONFIG }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm run electron:build-win-x64-installer
           npm run electron:build-win-arm64-installer
