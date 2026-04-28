@@ -14,9 +14,8 @@ on:
 
 
 env:
-  SOURCE_REPOSITORY: 'ossign/flogo-add-signing'
-  SOURCE_REPOSITORY_NAME: 'flogo-add-signing'
-
+  SOURCE_REPOSITORY: 'adolfintel/flogo'
+  SOURCE_REPOSITORY_NAME: 'flogo'
 
 jobs:
   sign:
