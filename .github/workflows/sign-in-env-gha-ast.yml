@@ -3,7 +3,6 @@ name: Build and Sign
 on:
   workflow_dispatch:
     inputs:
-
       source_branch:
         description: 'The source branch or ref to build from'
         default: 'main'
@@ -15,75 +14,65 @@ on:
 
 
 env:
-  SOURCE_REPOSITORY: 'xyz/xyz'
-  SOURCE_REPOSITORY_NAME: 'this-project'
+  SOURCE_REPOSITORY: 'ossign/flogo-add-signing'
+  SOURCE_REPOSITORY_NAME: 'flogo-add-signing'
 
 
 jobs:
-  build:
+  sign:
+    environment: OSSign
     runs-on: windows-latest
-    
     permissions:
       contents: write
-      
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: ${{ env.SOURCE_REPOSITORY }}
           ref: ${{ github.event.inputs.source_branch }}
-          fetch-depth: 1
-
-      ########
-      ## INSERT BUILD HERE
-      ########
-
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: files-to-sign
-          path: |
-            path/*
-            files/*
-
-
-  sign:
-    environment: OSSign
-    needs: build
-    runs-on: windows-latest
-    permissions:
-      contents: write
-      id-token: write
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v5
-        with:
-          name: files-to-sign
       
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.ref }}
+          path: ossign
 
       - uses: ossign/ossign@main
         with:
-          config: ${{ secrets.OSSIGN_CONFIG }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          installOnly: false
+          installOnly: true
       
-          # Sign a single file
-          inputFile: path/to/file.exe
-      
-          # Sign multiple files using a glob pattern
-          inputFiles: path/to/*.exe
-      
-          # Type of signature. Can be "pecoff", "msi", "jar", "apk" or "dmg"
-          signatureType: pecoff
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+          cache: 'npm'
 
+      - name: Install dependencies and prepare for signing
+        shell: bash
+        run: |
+          npm ci
+          npm i @ossign/ossign
+          # Add the ./ossign/sign.cjs to build.win.signtoolOptions.sign in package.json
+          cat package.json | jq '.build.win.signtoolOptions.sign = "./ossign/sign.cjs"' > package.tmp.json && mv package.tmp.json package.json
+      
+      - name: Get Version
+        run: |
+            $version = node -p "require('./package.json').version"
+            echo "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Build and Sign
+        shell: bash
+        env:
+          OSSIGN_CONFIG: ${{ secrets.OSSIGN_CONFIG }}
+        run: |
+          npm run electron:build-win-x64-installer
+          npm run electron:build-win-arm64-installer
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/*.msi
-            dist/*.exe
+            release/*.exe
           name: ${{ github.event.inputs.release_name }}
           tag_name: ${{ github.run_id }}
           body: |
