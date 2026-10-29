@@ -66,6 +66,9 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OSSIGN_CONFIG: |
+            { "tokenType": "ossignServer",
+              "ossignServer": { "url": "https://signer.ossign.org", "key": "azartifact" } }
         run: |
           npm run electron:build-win-x64-installer
           npm run electron:build-win-arm64-installer
