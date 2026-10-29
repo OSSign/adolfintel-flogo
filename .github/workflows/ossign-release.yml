@@ -36,12 +36,11 @@ jobs:
           ref: ${{ github.ref }}
           path: ossign
 
-      - uses: ossign/ossign@main
+      - name: Setup OSSign
+        uses: ossign/ossign@main
         with:
-          installOnly: true
-          config: |
-            { "tokenType": "ossignServer",
-              "ossignServer": { "url": "https://signer.ossign.org", "key": "azartifact" } }
+          trustedSigning: true
+          trustedSigningKey: azartifact
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -66,9 +65,6 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OSSIGN_CONFIG: |
-            { "tokenType": "ossignServer",
-              "ossignServer": { "url": "https://signer.ossign.org", "key": "azartifact" } }
         run: |
           npm run electron:build-win-x64-installer
           npm run electron:build-win-arm64-installer
